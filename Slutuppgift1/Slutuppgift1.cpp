@@ -4,20 +4,48 @@
 #include <stdlib.h>
 #include <string>
 #include <conio.h>
+#include <fstream>
+#include <cmath>
 using namespace std;
 
+#define ENTER 13
+#define ESC 27
+#define BACK 8
+#define UP 72
+#define LEFT 75
+#define RIGHT 77
+#define DOWN 80
+
+
 struct settings {
-    int gridsize;
-    bool multiMode;
     bool devMode;
+    bool multiMode;
+    int gridsize;
     int turn;
 };
 
+
+//Färg Funktioner
+string bold(string inp) {
+    return "\033[1m" + inp + "\033[0m";
+}
+string whiteback(string inp) {
+    return "\033[100m" + inp + "\033[0m";
+}
+string white(string inp) {
+    return "\033[97m" + inp + "\033[0m";
+}
 string red(string inp) {
     return "\033[31m" + inp + "\033[0m";
 }
 string blue(string inp) {
     return "\033[34m" + inp + "\033[0m";
+}
+string green(string inp) {
+    return "\033[92m" + inp + "\033[0m";
+}
+string darkgray(string inp) {
+    return "\033[90m" + inp + "\033[0m";
 }
 string erase() {
     return "\033[2K";
@@ -36,272 +64,552 @@ string moveCursor(int x) {
 
 }
 
-bool hBingo(string dG[], int gridsize) {
+//Filhantering
+void readSettings(settings& s) {
+    int text;
+    ifstream readFile;
+    readFile.open("Settings.txt");
+    readFile >> text;
+    s.devMode = text;
+    readFile >> text;
+    s.multiMode = text;
+    readFile >> text;
+    s.gridsize = text;
+    readFile.close();
+}
+void writeSettings(settings s) {
+    int text;
+    ofstream writeFile("Settings.txt");
+    text = s.devMode;
+    writeFile << text << "\n";
+    text = s.multiMode;
+    writeFile << text << "\n";
+    text = s.gridsize;
+    writeFile << text << "\n";
+    writeFile.close();
+}
+
+//Bingo checkar
+bool hBingo(vector<string> dG, settings s) {
     bool redBingo, blueBingo;
-    for (int i = 0; i < gridsize; i++) {
+    for (int y = 0; y < s.gridsize; y++) {
         redBingo = true;
         blueBingo = true;
-        for (int j = 0; j < gridsize; j++) {
-            if (dG[i * gridsize + j] != red("#"))
+        for (int x = 0; x < s.gridsize; x++) {
+            if (dG[y * s.gridsize + x] != red("#"))
                 redBingo = false;
-            if (j == gridsize - 1 && redBingo)
-                return true;
-            if (dG[i * gridsize + j] != blue("#"))
+            if (dG[y * s.gridsize + x] != blue("#"))
                 blueBingo = false;
-            if (j == gridsize - 1 && blueBingo)
+
+            if (x + 1 == s.gridsize && redBingo)
+                return true;
+            if (x + 1 == s.gridsize && blueBingo)
                 return true;
         }
     }
     return false;
 }
-bool vBingo(string dG[], int gridsize) {
+bool vBingo(vector<string> dG, settings s) {
     bool redBingo, blueBingo;
-    for (int i = 0; i < gridsize; i++) {
+    for (int x = 0; x < s.gridsize; x++) {
         redBingo = true;
         blueBingo = true;
-        for (int j = 0; j < gridsize; j++) {
-            if (dG[j * gridsize + i] != red("#"))
+        for (int y = 0; y < s.gridsize; y++) {
+            if (dG[y * s.gridsize + x] != red("#"))
                 redBingo = false;
-            if (j == gridsize - 1 && redBingo)
-                return true;
-            if (dG[j * gridsize + i] != blue("#"))
+            if (dG[y * s.gridsize + x] != blue("#"))
                 blueBingo = false;
-            if (j == gridsize - 1 && blueBingo)
+
+            if (y + 1 == s.gridsize && redBingo)
+                return true;
+            if (y + 1 == s.gridsize && blueBingo)
                 return true;
         }
     }
     return false;
 }
-bool LtoRDBingo(string dG[], int gridsize) {
+bool LtoRDBingo(vector<string> dG, settings s) {
     bool redBingo = true, blueBingo = true;
-    for (int i = 0; i < gridsize; i++) {
-        if (dG[i * gridsize + i] != red("#"))
+    for (int i = 0; i < s.gridsize; i++) {
+        if (dG[i * s.gridsize + i] != red("#"))
             redBingo = false;
-        if (dG[i * gridsize + i] != blue("#"))
+        if (dG[i * s.gridsize + i] != blue("#"))
             blueBingo = false;
     }
     if (blueBingo || redBingo)
         return true;
+    else
+        return false;
 }
-bool RtoLDBingo(string dG[], int gridsize) {
+bool RtoLDBingo(vector<string> dG, settings s) {
     bool redBingo = true, blueBingo = true;
-    for (int i = 0; i < gridsize; i++) {
-        if (dG[i * gridsize + gridsize - (i + 1)] != red("#"))
+    for (int i = 0; i < s.gridsize; i++) {
+        if (dG[i * s.gridsize + s.gridsize - (i + 1)] != red("#"))
             redBingo = false;
-        if (dG[i * gridsize + gridsize - (i + 1)] != blue("#"))
+        if (dG[i * s.gridsize + s.gridsize - (i + 1)] != blue("#"))
             blueBingo = false;
     }
     if (blueBingo || redBingo)
         return true;
+    else
+        return false;
 }
 
-bool bingocheck(string dG[], int gridsize) {
-    if (hBingo(dG, gridsize))
+bool bingocheck(vector<string> dG, settings s) {
+    if (hBingo(dG, s))
         return true;
-    if (vBingo(dG, gridsize))
+    if (vBingo(dG, s))
         return true;
-    if (LtoRDBingo(dG, gridsize))
+    if (LtoRDBingo(dG, s))
         return true;
-    if (RtoLDBingo(dG, gridsize))
+    if (RtoLDBingo(dG, s))
         return true;
     return false;
 }
 
-void generateGrid(int nG[], string dG[], int gridsize) {
-    for (int i = 0; i < gridsize; i++) {
-        for (int j = 0; j < gridsize; j++) {
-            nG[i * gridsize + j] = 0;
-            if (i * gridsize + j > 25)
-                dG[i * gridsize + j] = 'a' - 26 + (i * gridsize + j);
-            else
-                dG[i * gridsize + j] = 'A' + (i * gridsize + j);
-        }
+//Spelet
+void generateGrid(vector<int>& nG, vector<string>& dG, settings s) {
+    string text;
+    for (int i = 0; i < s.gridsize * s.gridsize; i++) {
+        i = i;
+        if (i < 26)
+            text = 'A' + i;
+        else
+            text = 'a' + i - 26;
+        dG.push_back(text);
     }
 
     srand(time(0));
-    bool notUsed;
+    bool used;
     int numsGenerated = 0;
 
-    while (numsGenerated < (gridsize * gridsize)) {
-        notUsed = true;
-        int num = rand() % (gridsize * gridsize) + 1;
+    while (nG.size() < (s.gridsize * s.gridsize)) {
+        used = false;
+        int num = rand() % (s.gridsize * s.gridsize) + 1;
 
-        for (int i = 0; i < gridsize; i++) {
-            for (int j = 0; j < gridsize; j++) {
-                if (num == nG[i * gridsize + j])
-                    notUsed = false;
-            }
+        for (int i = 0; i < nG.size(); i++) {
+            if (num == nG[i])
+                used = true;
         }
-        if (notUsed) {
-            nG[numsGenerated] = num;
-            numsGenerated++;
+        if (!used) {
+            nG.push_back(num);
         }
     }
 }
 
-void printGrid(int nG[], string dG[], int gridsize, vector<int> usedNumbers, settings player) {
+void printGrid(vector<int> nG, vector<string> dG, settings s, vector<int> usedNumbers) {
+    int pos;
     cout << "\033[H";
     erase();
-    cout << "* ----- *\n\033[2K | Bingo | \n\033[2K * ------ *\n";
-
-    for (int i = 0; i < gridsize; i++) {
-        for (int j = 0; j < gridsize; j++) {
-            cout << dG[i * gridsize + j] << "  ";
-        }
-        cout << "   ";
-        for (int k = 1; k <= gridsize; k++) {
-            cout << i * gridsize + k << " ";
-            if (i * gridsize + k < 10)
-                cout << " ";
-            for (int l = 0; l < usedNumbers.size(); l++) {
-                if (usedNumbers[l] == i * gridsize + k) {
-                    cout << "\033[3D";
-                    cout << red("X") << "  ";
-                }
-            }
-        }
-        cout << endl;
+    cout << "= BINGO ==";
+    if (s.multiMode) {
+        if (s.turn % 2 == 0)
+            cout << red(" Red's  Turn") << " =";
+        else
+            cout << blue(" Blue's Turn") << " =";
     }
-    cout << endl;
-    if (player.devMode) {
-        for (int i = 0; i < gridsize; i++) {
-            for (int j = 0; j < gridsize; j++) {
-                cout << nG[i * gridsize + j] << " ";
-                if (nG[i * gridsize + j] < 10)
+    else {
+        cout << "==============";
+    }
+
+    for (int i = 0; i < s.gridsize-3; i++) {
+        cout << "======";
+    }
+    cout << "\n";
+
+
+    for (int y = 0; y < s.gridsize; y++) {
+        cout << "| ";
+        for (int x = 0; x < s.gridsize; x++) {
+            cout << dG[y * s.gridsize + x] << "  ";
+        }
+        cout << "|  ";
+
+        for (int x = 1; x <= s.gridsize; x++) {
+            bool used = false;
+            for (int l = 0; l < usedNumbers.size(); l++) {
+                if (usedNumbers[l] == y * s.gridsize + x)
+                    used = true;
+            }
+            if (used)
+                cout << red("X") << "  ";
+            else {
+                cout << y * s.gridsize + x << " ";
+                if (y * s.gridsize + x < 10)
                     cout << " ";
             }
-            cout << endl;
+        }
+        cout << "|";
+        cout << endl;
+    }
+
+    cout << "========================";
+    for (int i = 0; i < s.gridsize - 3; i++) {
+        cout << "======";
+    }
+    cout << endl;
+    if (s.devMode) {
+        for (int i = 0; i < s.gridsize * s.gridsize; i++) {
+            cout << nG[i] << " ";
+            if (nG[i] < 10)
+                cout << " ";
+            if (i % s.gridsize == s.gridsize - 1)
+                cout << endl;
         }
     }
 }
-
-void userGuess(int nG[], string dG[], int gridsize, settings player) {
+void revampuserGuess(vector<int> nG, vector<string> dG, settings s) {
     int guess;
-    int amountOfGuesses = 0;
+    char inp;
+    bool used;
+    string number;
     vector<int> usedNumbers;
-    bool notUsed;
-    
-    printGrid(nG, dG, gridsize, usedNumbers, player);
 
+    system("CLS");
     for (;;) {
-        notUsed = true;
-        printGrid(nG, dG, gridsize, usedNumbers, player);
-        if (player.multiMode) {
-            if ((player.turn + 1) % 2 == 1)
-                cout << red("X") << " ";
-            else
+        number = {};
+        guess = 0;
+        used = false;
+        printGrid(nG, dG, s, usedNumbers);
+        if (s.multiMode) {
+            if ((s.turn) % 2 == 1)
                 cout << blue("X") << " ";
+            else
+                cout << red("X") << " ";
         }
-        cout << "Guess a number between 1 - " << gridsize * gridsize << "\n" << erase();
-        cin >> guess;
-        if (guess == 0)
-            return;
-        else if (0 < guess && guess < gridsize * gridsize + 1) {
-            for (int i = 0; i < usedNumbers.size(); i++) {
-                if (guess == usedNumbers.at(i))
-                    notUsed = false;
+        cout << "Guess a number between 1 - " << s.gridsize * s.gridsize << "   Back[esc]\n" << "\033[0J";
+        for (;;) {
+            inp = _getch();
+            if ('0' <= inp && inp <= '9') {
+                number += inp;
+                cout << inp;
             }
-            if (notUsed) {
-                player.turn++;
-                usedNumbers.push_back(guess);
-
-                for (int i = 0; i < gridsize; i++) {
-                    for (int j = 0; j < gridsize; j++) {
-
-                        if (guess == nG[i * gridsize + j]) {
-                            if (player.multiMode) {
-                                if (player.turn % 2 == 1)
-                                    dG[i * gridsize + j] = red("#");
-                                else
-                                    dG[i * gridsize + j] = blue("#");
-                            }
-                            else
-                                dG[i * gridsize + j] = red("#");
-                            printGrid(nG, dG, gridsize, usedNumbers, player);
-                        }
-                    }
+            else if (inp == BACK && number.size() > 0) {
+                number.pop_back();
+                cout << "\033[1D \033[1D";
+            }
+            else if (inp == ENTER && number.size() > 0) {
+                for (int i = 0; i < number.size(); i++) {
+                    guess += (number[i] - 48) * pow(10, number.size() - i - 1);
                 }
+                break;
             }
-            else {
-                printGrid(nG, dG, gridsize, usedNumbers, player);
+            else if (inp == ESC)
+                return;
+        }
+
+        for (int i = 0; i < usedNumbers.size(); i++) {
+            if (guess == usedNumbers.at(i))
+                used = true;
+        }
+        if (!used && 0 < guess && guess < s.gridsize * s.gridsize + 1) {
+            s.turn++;
+            usedNumbers.push_back(guess);
+
+            for (int i = 0; i < s.gridsize * s.gridsize; i++) {
+                if (guess == nG[i]) {
+                    if (s.multiMode && s.turn % 2 == 0) {
+                        dG[i] = blue("#");
+                    }
+                    else
+                        dG[i] = red("#");
+                    printGrid(nG, dG, s, usedNumbers);
+                }
             }
         }
         else {
-            printGrid(nG, dG, gridsize, usedNumbers, player);
+            printGrid(nG, dG, s, usedNumbers);
         }
-        if (bingocheck(dG, gridsize)) {
-            if (player.multiMode) {
-                if (player.turn % 2 == 1)
-                    cout << erase() << "Red won! It took " << player.turn << " guesses!";
+        if (bingocheck(dG, s)) {
+            if (s.multiMode) {
+                if (s.turn % 2 == 1)
+                    cout << erase() << "Red won! It took " << s.turn << " guesses!\n";
                 else
-                    cout << erase() << "Blue won! It took " << player.turn << " guesses!";
+                    cout << erase() << "Blue won! It took " << s.turn << " guesses!\n";
             }
             else
-                cout << erase() << "You got BINGO in " << player.turn << " guesses!";
+                cout << erase() << "You got BINGO in " << s.turn << " guesses!\n";
+            cout << erase();
+            cout << "Press any key to return...";
+            char inp = _getch();
+            system("CLS");
+            return;
+        }
+        else if (s.turn == s.gridsize * s.gridsize) {
+            cout << erase() << "You both lost!\n";
+            cout << erase();
+            cout << "Press any key to return...";
+            char inp = _getch();
+            system("CLS");
             return;
         }
     }
 }
-void updmenu(settings& player) {
-    char inp = _getch();
+void userGuess(vector<int> nG, vector<string> dG, settings s) {
+    int guess;
+    vector<int> usedNumbers;
+    bool used;
+    
+    system("CLS");
+    for (;;) {
+        used = false;
+        printGrid(nG, dG, s, usedNumbers);
+        if (s.multiMode) {
+            if ((s.turn) % 2 == 1)
+                cout << blue("X") << " ";
+            else
+                cout << red("X") << " ";
+        }
+        cout << "Guess a number between 1 - " << s.gridsize * s.gridsize << "\n" << erase();
+        cin >> guess;
 
+        for (int i = 0; i < usedNumbers.size(); i++) {
+            if (guess == usedNumbers.at(i))
+                used = true;
+        }
+        cout << guess;
+        _getch();
+        if (guess == 0) {
+            system("CLS");
+            return;
+        }
+        else if (!used && 0 < guess && guess < s.gridsize * s.gridsize + 1) {
+            s.turn++;
+            usedNumbers.push_back(guess);
+
+            for (int i = 0; i < s.gridsize * s.gridsize; i++) {
+                if (guess == nG[i]) {
+                    if (s.multiMode && s.turn % 2 == 0) {
+                        dG[i] = blue("#");
+                    }
+                    else
+                        dG[i] = red("#");
+                    printGrid(nG, dG, s, usedNumbers);
+                }
+            }
+        }
+        else {
+            printGrid(nG, dG, s, usedNumbers);
+        }
+        if (bingocheck(dG, s)) {
+            if (s.multiMode) {
+                if (s.turn % 2 == 1)
+                    cout << erase() << "Red won! It took " << s.turn << " guesses!\n";
+                else
+                    cout << erase() << "Blue won! It took " << s.turn << " guesses!\n";
+            }
+            else
+                cout << erase() << "You got BINGO in " << s.turn << " guesses!\n";
+            cout << erase();
+            cout << "Press any key to return...";
+            char inp = _getch();
+            system("CLS");
+            return;
+        }
+        else if (s.turn == s.gridsize * s.gridsize) {
+            cout << erase() << "You both lost!\n";
+            cout << erase();
+            cout << "Press any key to return...";
+            char inp = _getch();
+            system("CLS");
+            return;
+        }
+    }
 }
 
-void menu(settings& player) {
+//Meny Funktioner
+void printmenu(vector <string> menuitems, int selected) {
+    cout << "\033[H";
+    for (int i = 0; i < menuitems.size(); i++) {
+        if (i == selected)
+            cout << "> " << bold(menuitems[i]) << "\n";
+        else
+            cout << erase() << " " << darkgray(menuitems[i]) << "\n";
+    }
+    return;
+}
+void printsettings(settings player, int x, int y) {
+    //system("CLS");
+    cout << "\033[H";
+    cout << "  Developer Mode\n";
+    if (y == 0) {
+        cout << ">   ";
+        if (x == 0) cout << bold(white("On"));
+        else if (player.devMode) cout << green("On");
+        else cout << darkgray("On");
+        cout << darkgray("/");
+        if (x == 1) cout << bold(white("Off"));
+        else if (!(player.devMode)) cout << green("Off");
+        else cout << darkgray("Off");
+    }
+    else {
+        cout << "    ";
+        if (player.devMode) cout << green("On") << darkgray("/Off");
+        else cout << darkgray("On/") << green("Off");
+    }
 
-    char inp = 1;
-    cout << erase() << "Welcome to Bingo!\n";
-    while (inp != 0) {
-        cout << "[1]Standard  [2]DevMode\n" << erase();
-        cin >> inp;
-        switch (inp) {
-        case '1':
-            player.devMode = false;
-            break;
-        case '2':
-            player.devMode = true;
-            break;
-        }
-        cout << "\033[H\n" << erase() << "[1]Singleplayer  [2]Multiplayer\n" << erase();
-        cin >> inp;
-        switch (inp) {
-        case '1':
-            player.multiMode = false;
-            break;
-        case '2':
-            player.multiMode = true;
-            break;
-        }
+    cout << "\n\n  Multiplayer Mode\n";
+    if (y == 1) {
+        cout << ">   ";
+        if (x == 0) cout << bold(white("On"));
+        else if (player.multiMode) cout << green("On");
+        else cout << darkgray("On");
+        cout << darkgray("/");
+        if (x == 1) cout << bold(white("Off"));
+        else if (!(player.multiMode)) cout << green("Off");
+        else cout << darkgray("Off");
+    }
+    else {
+        cout << "    ";
+        if (player.multiMode) cout << green("On") << darkgray("/Off");
+        else cout << darkgray("On/") << green("Off");
+    }
 
-        cout << "\033[H\n" << erase() << "[1]3x3  [2]4x4  [3]5x5  [4]6x6  [5]7x7  [0]Exit\n" << erase();
-        cin >> inp;
-        switch (inp) {
-        case '0':
-            player.gridsize = 0;
-            break;
-        case '1':
-            player.gridsize = 3;
-            break;
-        case'2':
-            player.gridsize = 4;
-            break;
-        case'3':
-            player.gridsize = 5;
-            break;
-        case'4':
-            player.gridsize = 6;
-            break;
-        case'5':
-            player.gridsize = 7;
-            break;
-        default:
-            //system("CLS");
-            cout << "\033[H";
-            cout << "Invalid input! Try again\n";
-            continue;
+    cout << "\n  Gridsize\n";
+
+    if (y == 2) {
+        cout << bold(white(">   "));
+
+        if (x == 0) cout << bold(white("3x3 "));
+        else if (player.gridsize - 3 == 0) cout << green("3x3 ");
+        else cout << darkgray("3x3 ");
+
+        if (x == 1) cout << bold(white("4x4 "));
+        else if (player.gridsize - 3 == 1) cout << green("4x4 ");
+        else cout << darkgray("4x4 ");
+
+        if (x == 2) cout << bold(white("5x5 "));
+        else if (player.gridsize - 3 == 2) cout << green("5x5 ");
+        else cout << darkgray("5x5 ");
+
+        if (x == 3) cout << bold(white("6x6 "));
+        else if (player.gridsize - 3 == 3) cout << green("6x6 ");
+        else cout << darkgray("6x6 ");
+
+        if (x == 4) cout << bold(white("7x7"));
+        else if (player.gridsize - 3 == 4) cout << green("7x7 ");
+        else cout << darkgray("7x7");
+    }
+    else {
+        //cout << darkgray("    3x3 4x4 5x5 6x6 7x7");
+        cout << "    ";
+        if (player.gridsize - 3 == 0) cout << green("3x3 ");
+        else cout << darkgray("3x3 ");
+
+        if (player.gridsize - 3 == 1) cout << green("4x4 ");
+        else cout << darkgray("4x4 ");
+
+        if (player.gridsize - 3 == 2) cout << green("5x5 ");
+        else cout << darkgray("5x5 ");
+
+        if (player.gridsize - 3 == 3) cout << green("6x6 ");
+        else cout << darkgray("6x6 ");
+
+        if (player.gridsize - 3 == 4) cout << green("7x7 ");
+        else cout << darkgray("7x7 ");
+    }
+    cout << "\n\n";
+    if (y == 3) cout << bold(white(">  Back[esc]"));
+    else cout << erase() << darkgray("  Back[esc]");
+    return;
+
+}
+int multichoicemenu(vector <string> menuitems) {
+    int selected = 0;
+    int inp;
+    for (;;) {
+        printmenu(menuitems, selected);
+        inp = _getch();
+        if (inp == UP)
+            selected -= 1;
+        if (inp == DOWN)
+            selected += 1;
+        if (selected < 0)
+            selected = 0;
+        if (selected > (menuitems.size() - 1))
+            selected = (menuitems.size() - 1);
+        if (inp == ENTER) {
+            return selected;
         }
-        player.turn = 0;
-        return;
+        if (inp == ESC)
+            return 2;
+    }
+}
+
+void settingsmenu(settings& s) {
+    int x = 0;
+    int y = 0;
+    int inp;
+    for (;;) {
+        printsettings(s, x, y);
+        inp = _getch();
+        if (inp == UP)
+            y--;
+        if (inp == DOWN)
+            y++;
+        if (inp == LEFT)
+            x--;
+        if (inp == RIGHT)
+            x++;
+        if (y < 0) y = 0;
+        if (y > 3) y = 3;
+        if (x < 0) x = 0;
+        if (y == 2) {
+            if (x > 4) x = 4;
+        }
+        else {
+            if (x > 1) x = 1;
+        }
+        if (inp == ESC) {
+            writeSettings(s);
+            system("CLS");
+            return;
+        }
+        if (inp == ENTER) {
+            switch (y) {
+            case 0:
+                if (x == 0) s.devMode = true;
+                else s.devMode = false;
+                break;
+            case 1:
+                if (x == 0) s.multiMode = true;
+                else s.multiMode = false;
+                break;
+            case 2:
+                s.gridsize = x + 3;
+                break;
+            case 3:
+                writeSettings(s);
+                system("CLS");
+                return;
+            }
+        }
+    }
+}
+void startmenu(settings& player) {
+    vector <string> menuitems = {"Start", "Settings", "Exit[esc]"};
+    system("CLS");
+    for (;;) {
+        switch (multichoicemenu(menuitems)) {
+        case 0:
+            system("CLS");
+            return;
+        case 1:
+            system("CLS");
+            settingsmenu(player);
+            break;
+        case 2:
+            exit(0);
+        }
+    }
+}
+
+//Felsökning
+void getchtest() {
+    int inp;
+    for (;;) {
+        inp = _getch();
+        cout << inp << " ";
     }
 }
 
@@ -309,22 +617,20 @@ void menu(settings& player) {
 
 int main()
 {
-    settings player; 
-    menu(player);
-    int gridsize = player.gridsize;
-    bool multimode = player.multiMode;
-    if (gridsize == 0)
-        return 0;
+    //getchtest();
+    settings s;
+    readSettings(s);
 
-    int* nG = new int[gridsize * gridsize];
+    cout << "\033[?25l";
+    for (;;) {
+        s.turn = 0;
+        startmenu(s);
 
-    string* dG = new string[gridsize * gridsize];
+        vector <int> nG;
+        vector <string> dG;
 
-    generateGrid(nG, dG, gridsize);
-    userGuess(nG, dG, gridsize, player);
-
-    delete[] nG;
-    delete[] dG;
-
+        generateGrid(nG, dG, s);
+        revampuserGuess(nG, dG, s);
+    }
     return 0;
 }
