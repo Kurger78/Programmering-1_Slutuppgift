@@ -2,7 +2,8 @@
 ## Sammanfattning
 Det här är gjort som slutuppgift i programmering 1.
 Spelet är som vanlig bingo fast det är du som skriver nummrena istället och försöker skapa x i rad på ett bräde.
-## Bakgrund
+Jag tycker det här blev väldigt lyckat i användar vänlighet och är extremt nöjd med hur meny systemet fungerar även om koden hade kunnat vara bättre.
+Det är också helt säkrat från missinputs och har inte hittat ett enda sätt att paja spelet på.
 
 ## Hur används programmet
 Spelet har väldigt lätta kontroller, piltangenter för att navigera menyn och enter för att verifiera val.
@@ -10,7 +11,7 @@ Escape för att gå tillbaka till menyn och avsluta.
 När spelet har startats kan man endast skriva in siffror. För att skicka in din gissning klickar man på Enter och för att sudda klickar man på Backspace.
 
 Målet är att få fyra i rad ifall brädet är 4x4. Det gör man genom att bara gissa tills det händer. Det finns Utvecklar läge eller Developer mode där ett fuskbräde syns som visar brädet du ska försöka gissa på.
-Det finns också Flerspelarläge där man kan köra 1 mot 1 och man gör varannan gissning.
+Det finns också Flerspelarläge där man kan köra 1 mot 1 och man gör varannan gissning och står då vems tur det är i botten av spelplanen.
 
 ## Nyckelaspekter
 ### String till Int
@@ -58,5 +59,8 @@ x * 100 + y * 10 + z * 1
 
 
 ## Utmaningar
+Det är inte riktigt något jag känner att spelet verkligen saknar och fanns inget problem jag inte lyckades lösa.
 
 ## Vad kommer härnäst
+Jag har inte gjort så att det finns flera vinstkombinationer eftersom jag kände att det inte hade lagt till något och bara gjort så att man måste gissa på i stort sett alla nummer. Att lägga till en AI man kan köra mot hade varit en annan sak jag hade kunnat göra men kände inte heller att den skulle göra så mycket för spelet. Båda sakerna är dock något som hade gett spelet mer variation och däför förbättrat det.
+
